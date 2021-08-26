@@ -15,6 +15,30 @@
  * along with Hylia.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+
+https://github.com/supercollider/supercollider/blob/develop/lang/LangPrimSource/SC_LinkClock.cpp
+
+Needed calls
+  * sessionState = mLink.captureAppSessionState();
+  * linkTime = hrToLinkTime(baseSeconds);
+  * sessionState.requestBeatAtTime(baseBeats, linkTime, mQuantum);
+  * commitAppSessionState
+  * https://github.com/supercollider/supercollider/blob/develop/lang/LangPrimSource/SC_LinkClock.cpp#L31
+
+
+  * numPeers
+    mLink.enable(true);
+    mLink.enableStartStopSync(true);
+    mLink.setTempoCallback([this](double bpm) { OnTempoChanged(bpm); });
+    mLink.setStartStopCallback([this](bool isPlaying) { OnStartStop(isPlaying); });
+    mLink.setNumPeersCallback([this](std::size_t numPeers) { OnNumPeersChanged(numPeers)
+https://github.com/supercollider/supercollider/blob/develop/lang/LangPrimSource/SC_LinkClock.cpp#L25
+
+from sc:
+* hrtolinktime
+* 
+*/
 #include "hylia.h"
 
 #if defined(__clang_major__) && __clang_major__ >= 4
@@ -79,6 +103,12 @@ public:
         engine.stopPlaying();
     }
 
+    double beatTime(double beatsPerBar)
+    {
+      auto sessionState = link.captureAppSessionState();
+      return(sessionState.beatAtTime(now(), beatsPerBar));
+    }
+
     void process(const uint32_t frames, LinkTimeInfo* const info)
     {
         const std::chrono::microseconds hostTime = hostTimeFilter.sampleTimeToHostTime(sampleTime)
@@ -87,6 +117,11 @@ public:
 
         sampleTime += frames;
     }
+
+    std::chrono::microseconds now() const
+    {
+      return link.clock().micros();
+    }  
 
 private:
     ableton::Link link;
@@ -147,6 +182,10 @@ void hylia_stop_playing(hylia_t* link)
 void hylia_process(hylia_t* link, uint32_t frames, hylia_time_info_t* info)
 {
     ((HyliaTransport*)link)->process(frames, (LinkTimeInfo*)info);
+}
+
+double hylia_beat_time(hylia_t* link, double beatsPerBar) {
+  return(((HyliaTransport*)link)->beatTime(beatsPerBar));
 }
 
 void hylia_cleanup(hylia_t* link)

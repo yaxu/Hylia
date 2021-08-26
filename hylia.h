@@ -43,6 +43,7 @@ void hylia_set_start_stop_sync_enabled(hylia_t* link, bool enabled);
 void hylia_start_playing(hylia_t* link);
 void hylia_stop_playing(hylia_t* link);
 void hylia_cleanup(hylia_t* link);
+double hylia_beat_time(hylia_t* link, double beatsPerBar);
 
 #ifdef __cplusplus
 }
